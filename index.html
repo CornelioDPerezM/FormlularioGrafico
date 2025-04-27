@@ -1,9 +1,144 @@
-<html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
-  <title> IDESWEB </title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico de Población Dominicana</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; }
+        #formulario-datos { margin-bottom: 20px; }
+        .fila-provincia { display: flex; align-items: center; margin-bottom: 5px; }
+        .fila-provincia label { margin-right: 10px; width: 150px; display: inline-block; }
+        .fila-provincia input[type="number"] { width: 80px; }
+    </style>
 </head>
-
 <body>
-  <h1> IDESWEB </h1>
+    <h1>Gráfico de Censo de Población Anual (Últimos 5 Años)</h1>
+
+    <form id="formulario-datos">
+        <h2>Ingrese los datos de población por provincia (últimos 5 años):</h2>
+        <div id="campos-provincias">
+            </div>
+        <button type="button" onclick="generarGrafico()">Generar Gráfico</button>
+    </form>
+
+    <div>
+        <canvas id="miGrafico"></canvas>
+    </div>
+
+    <script>
+        const provinciasRD = [
+            "Azua", "Baoruco", "Barahona", "Dajabón", "Distrito Nacional", "Duarte",
+            "Elías Piña", "El Seibo", "Espaillat", "Hato Mayor", "Hermanas Mirabal",
+            "Independencia", "La Altagracia", "La Romana", "La Vega", "María Trinidad Sánchez",
+            "Monseñor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia",
+            "Puerto Plata", "Samaná", "San Cristóbal", "San José de Ocoa", "San Juan",
+            "San Pedro de Macorís", "Sánchez Ramírez", "Santiago", "Santiago Rodríguez",
+            "Valverde"
+        ];
+        const ultimos5Anos = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 5 + i);
+        const camposProvincias = document.getElementById('campos-provincias');
+        const ctx = document.getElementById('miGrafico').getContext('2d');
+        let miGraficoChart;
+
+        // Generar los campos de entrada dinámicamente
+        provinciasRD.forEach(provincia => {
+            const divProvincia = document.createElement('div');
+            divProvincia.classList.add('fila-provincia');
+
+            const labelProvincia = document.createElement('label');
+            labelProvincia.textContent = `${provincia}:`;
+            divProvincia.appendChild(labelProvincia);
+
+            ultimos5Anos.forEach(anio => {
+                const labelAnio = document.createElement('label');
+                labelAnio.textContent = `${anio}:`;
+                const inputPoblacion = document.createElement('input');
+                inputPoblacion.type = 'number';
+                inputPoblacion.id = `${provincia}-${anio}`;
+                inputPoblacion.placeholder = `Población ${anio}`;
+
+                divProvincia.appendChild(labelAnio);
+                divProvincia.appendChild(inputPoblacion);
+            });
+
+            camposProvincias.appendChild(divProvincia);
+        });
+
+        function obtenerDatosFormulario() {
+            const datos = {};
+            provinciasRD.forEach(provincia => {
+                datos[provincia] = {};
+                ultimos5Anos.forEach(anio => {
+                    const inputId = `${provincia}-${anio}`;
+                    const valor = parseInt(document.getElementById(inputId).value) || 0;
+                    datos[provincia][anio] = valor;
+                });
+            });
+            return datos;
+        }
+
+        function generarGrafico() {
+            const datosPoblacion = obtenerDatosFormulario();
+            const datasets = [];
+
+            for (const provincia in datosPoblacion) {
+                const data = ultimos5Anos.map(anio => datosPoblacion[provincia][anio]);
+                datasets.push({
+                    label: provincia,
+                    data: data,
+                    backgroundColor: getRandomColor(), // Función para generar colores aleatorios
+                    borderColor: getRandomColor(),
+                    borderWidth: 1
+                });
+            }
+
+            if (miGraficoChart) {
+                miGraficoChart.destroy(); // Destruir el gráfico anterior si existe
+            }
+
+            miGraficoChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ultimos5Anos,
+                    datasets: datasets
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Población'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Año'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Censo de Población Anual por Provincia',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getRandomColor() {
+            const r = Math.floor(Math.random() * 255);
+            const g = Math.floor(Math.random() * 255);
+            const b = Math.floor(Math.random() * 255);
+            return `rgba(${r}, ${g}, ${b}, 0.7)`;
+        }
+    </script>
 </body>
 </html>
